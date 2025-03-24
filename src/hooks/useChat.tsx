@@ -86,7 +86,7 @@ export function useChat() {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-                    'HTTP-Referer': 'http://localhost:5173/', // ou seu domínio real
+                    'HTTP-Referer': 'https://git-guru-guide.vercel.app/', // ou seu domínio real
                     'X-Title': 'GitGuru AI Chat'
                 },
                 body: JSON.stringify({
