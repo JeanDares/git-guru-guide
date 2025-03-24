@@ -1,167 +1,180 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2 } from 'lucide-react';
+import { Send, User, Bot, Loader2, RefreshCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { useToast } from '../components/ui/use-toast';
+import { useChat, ChatMessage } from '@/hooks/useChat';
+import TypingIndicator from '@/components/TypingIndicator';
 
-type Message = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-};
-
-const initialMessages: Message[] = [
-  {
-    id: '1',
-    role: 'assistant',
-    content: 'Olá! Sou o GitGuru, seu assistente para dúvidas sobre Git. Como posso ajudar hoje?'
-  }
-];
-
-const ChatInterface: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+const ChatInterface = () => {
+  const { messages, isLoading, sendMessage, clearChat } = useChat();
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
-  // Auto-scroll to the bottom of the chat
+  // Rolagem automática para a mensagem mais recente
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Função para enviar mensagem
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!input.trim()) return;
-    
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input.trim()
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
+
+    if (!input.trim() || isLoading) return;
+
+    const userInput = input.trim();
     setInput('');
-    setIsLoading(true);
-    
-    try {
-      // Here you would normally make an API call to OpenAI
-      // For now, we'll simulate a response after a delay
-      setTimeout(() => {
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: getSimulatedResponse(input.trim())
-        };
-        
-        setMessages(prev => [...prev, assistantMessage]);
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error('Error fetching response:', error);
-      setIsLoading(false);
-    }
+
+    // Enviar mensagem e obter resposta
+    await sendMessage(userInput);
   };
 
-  // Function to simulate responses for demo purposes
-  const getSimulatedResponse = (question: string): string => {
-    const lowerCaseQuestion = question.toLowerCase();
-    
-    if (lowerCaseQuestion.includes('init')) {
-      return 'O comando `git init` inicializa um novo repositório Git no diretório atual. Ele cria um subdiretório oculto .git que contém todos os arquivos necessários para o repositório Git. Exemplo: `git init`';
-    }
-    
-    if (lowerCaseQuestion.includes('clone')) {
-      return 'O comando `git clone` cria uma cópia de um repositório existente. O clone inclui todos os arquivos, histórico e branches do projeto. Exemplo: `git clone https://github.com/usuario/repositorio.git`';
-    }
-    
-    if (lowerCaseQuestion.includes('commit')) {
-      return 'O comando `git commit` salva suas alterações no repositório local. É como tirar uma "foto" do seu projeto naquele momento. Use sempre mensagens descritivas. Exemplo: `git commit -m "Adiciona função de login"`';
-    }
-    
-    if (lowerCaseQuestion.includes('push')) {
-      return 'O comando `git push` envia suas alterações locais para o repositório remoto. Isso permite que outros colaboradores vejam suas mudanças. Exemplo: `git push origin main`';
-    }
-    
-    return 'Desculpe, não consegui entender completamente sua pergunta sobre Git. Poderia reformular ou ser mais específico? Estou aqui para ajudar com qualquer comando ou conceito do Git que você precise entender.';
+  // Função para limpar o chat
+  const handleClearChat = () => {
+    clearChat();
+    toast({
+      title: 'Chat reiniciado',
+      description: 'O histórico de conversa foi limpo.'
+    });
+  };
+
+  // Formatação de código inline em mensagens
+  const formatMessage = (content: string) => {
+    // Divida o conteúdo em linhas
+    return content.split('\n').map((line, i) => {
+      // Verifique se há blocos de código (formato ```code```)
+      if (line.startsWith('```') && !line.endsWith('```')) {
+        // Início de um bloco de código
+        return (
+          <div key={i} className="my-2">
+            <pre className="bg-zinc-900 text-zinc-100 p-3 rounded text-sm overflow-x-auto">
+              {line.replace('```', '')}
+            </pre>
+          </div>
+        );
+      } else if (line.endsWith('```') && !line.startsWith('```')) {
+        // Fim de um bloco de código
+        return (
+          <div key={i} className="my-2">
+            <pre className="bg-zinc-900 text-zinc-100 p-3 rounded text-sm overflow-x-auto">
+              {line.replace('```', '')}
+            </pre>
+          </div>
+        );
+      } else if (line.startsWith('```') && line.endsWith('```')) {
+        // Bloco de código de uma linha
+        return (
+          <div key={i} className="my-2">
+            <pre className="bg-zinc-900 text-zinc-100 p-3 rounded text-sm overflow-x-auto">
+              {line.replace(/```/g, '')}
+            </pre>
+          </div>
+        );
+      } else if (line.includes('`')) {
+        // Código inline
+        const parts = line.split('`');
+        return (
+          <p key={i} className="my-1">
+            {parts.map((part, j) => {
+              // Se for índice ímpar, é código
+              return j % 2 === 1 ? (
+                <code key={j} className="bg-zinc-200 dark:bg-zinc-800 px-1 py-0.5 rounded text-sm">
+                  {part}
+                </code>
+              ) : (
+                <span key={j}>{part}</span>
+              );
+            })}
+          </p>
+        );
+      } else {
+        // Texto normal
+        return <p key={i} className="my-1">{line}</p>;
+      }
+    });
   };
 
   return (
-    <div className="flex flex-col h-[600px] md:h-[700px] neo-glass rounded-xl overflow-hidden">
-      {/* Chat messages */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div 
-              key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div 
-                className={`max-w-[80%] md:max-w-[70%] rounded-lg px-4 py-3 ${
-                  message.role === 'user' 
-                    ? 'bg-primary text-primary-foreground rounded-br-none' 
-                    : 'bg-secondary rounded-bl-none'
-                }`}
+    <Card className="w-full shadow-md border">
+      <CardHeader className="p-4 border-b flex flex-row items-center justify-between">
+        <CardTitle className="text-lg flex items-center">
+          <Bot className="h-5 w-5 mr-2 text-primary" /> Chat com GitGuru
+        </CardTitle>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleClearChat}
+          title="Limpar conversa"
+        >
+          <RefreshCcw className="h-4 w-4" />
+        </Button>
+      </CardHeader>
+      <CardContent className="p-0">
+        {/* Área de mensagens */}
+        <ScrollArea className="h-[500px] p-4">
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={cn(
+                  "flex gap-3 rounded-lg p-4",
+                  message.role === 'assistant'
+                    ? "bg-secondary/30"
+                    : "bg-primary/5 ml-auto max-w-[80%]"
+                )}
               >
-                <div className="flex items-center mb-1">
-                  {message.role === 'assistant' ? (
-                    <Bot className="h-4 w-4 mr-2" />
-                  ) : (
-                    <User className="h-4 w-4 mr-2" />
-                  )}
-                  <span className="text-xs font-medium">
-                    {message.role === 'assistant' ? 'GitGuru' : 'Você'}
-                  </span>
-                </div>
-                <div className="text-sm whitespace-pre-wrap">
-                  {message.content}
-                </div>
-              </div>
-            </div>
-          ))}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-secondary rounded-lg rounded-bl-none px-4 py-3">
-                <div className="flex items-center">
-                  <Bot className="h-4 w-4 mr-2" />
-                  <span className="text-xs font-medium">GitGuru</span>
-                </div>
-                <div className="flex items-center mt-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="ml-2 text-sm">Pensando...</span>
+                {message.role === 'assistant' ? (
+                  <div className="h-8 w-8 shrink-0 bg-primary/20 rounded-full flex items-center justify-center text-primary">
+                    <Bot size={18} />
+                  </div>
+                ) : (
+                  <div className="h-8 w-8 shrink-0 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center">
+                    <User size={18} />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="prose prose-sm dark:prose-invert break-words">
+                    {formatMessage(message.content)}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {message.timestamp.toLocaleTimeString()}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
-      
-      {/* Input form */}
-      <div className="border-t border-border p-4 bg-background/50">
-        <form onSubmit={handleSubmit} className="flex items-center">
-          <input
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+
+        {/* Área de entrada */}
+        <form onSubmit={handleSendMessage} className="flex items-center p-3 border-t">
+          <Input
             type="text"
+            placeholder="Digite sua pergunta sobre Git..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite sua pergunta sobre Git..."
-            className="flex-1 py-2 px-4 bg-secondary rounded-l-full focus:outline-none focus:ring-1 focus:ring-primary"
+            className="flex-1 mr-2"
             disabled={isLoading}
           />
-          <button
+          <Button
             type="submit"
-            className="bg-primary text-primary-foreground rounded-r-full py-2 px-4 focus:outline-none focus:ring-1 focus:ring-primary-foreground disabled:opacity-50"
+            size="icon"
             disabled={isLoading || !input.trim()}
+            className={isLoading ? "opacity-70" : ""}
           >
-            <Send className="h-5 w-5" />
-          </button>
+            {isLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
+          </Button>
         </form>
-        <p className="text-xs text-muted-foreground mt-2 text-center">
-          As respostas são simuladas para demonstração. Em produção, conecte à API da OpenAI.
-        </p>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
