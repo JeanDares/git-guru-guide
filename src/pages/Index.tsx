@@ -128,7 +128,7 @@ const Index = () => {
                 </Link>
                 <Link
                   to="/chat"
-                  className="inline-flex items-center justify-center px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary/80 transition-all duration-200"
+                  className="inline-flex items-center justify-center px-6 py-3 bg-orange-500 text-white rounded-full font-medium hover:bg-orange-600 transition-all duration-200"
                 >
                   Perguntar ao GitGuru
                 </Link>
