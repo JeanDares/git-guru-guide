@@ -128,7 +128,7 @@ export function useChat() {
             // Adiciona mensagem de erro
             const errorMessage: ChatMessage = {
                 id: generateId(),
-                content: 'Desculpe, ocorreu um erro ao processar sua pergunta. Por favor, tente novamente mais tarde.',
+                content: 'Desculpe, ocorreu um erro ao processar sua pergunta. Por favor, tente novamente mais tarde. Router IA.',
                 role: 'assistant',
                 timestamp: new Date()
             };
