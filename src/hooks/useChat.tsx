@@ -90,7 +90,7 @@ export function useChat() {
                     'X-Title': 'GitGuru AI Chat'
                 },
                 body: JSON.stringify({
-                    model: 'mistralai/mistral-7b-instruct',
+                    model: "mistralai/mistral-small-3.1-24b-instruct:free",
                     messages: messagesToSend,
                     temperature: 0.7,
                     max_tokens: 1000
