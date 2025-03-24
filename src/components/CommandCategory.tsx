@@ -1,20 +1,24 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { GitCategory } from '@/lib/gitCommands';
 import CommandItem from './CommandItem';
 
 interface CommandCategoryProps {
   category: GitCategory;
+  isExpanded?: boolean;
+  onToggle?: () => void;
 }
 
-const CommandCategory: React.FC<CommandCategoryProps> = ({ category }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
+const CommandCategory: React.FC<CommandCategoryProps> = ({ 
+  category, 
+  isExpanded = false, 
+  onToggle 
+}) => {
   return (
     <div className="mb-10 animate-fade-in">
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={onToggle}
         className="w-full flex items-center justify-between p-4 neo-glass rounded-xl hover:shadow-md transition-all duration-200"
       >
         <div className="text-left">

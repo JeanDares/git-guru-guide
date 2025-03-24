@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, Code, Lightbulb } from 'lucide-react';
 import { GitCommand } from '@/lib/gitCommands';
 
 interface CommandItemProps {
@@ -9,63 +9,60 @@ interface CommandItemProps {
 
 const CommandItem: React.FC<CommandItemProps> = ({ command }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-
-  const copyToClipboard = (text: string, index: number) => {
-    navigator.clipboard.writeText(text);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 2000);
-  };
 
   return (
-    <div className="border border-border bg-card rounded-lg shadow-sm overflow-hidden">
-      <button
+    <div 
+      id={`command-${command.id}`} 
+      className="border border-border rounded-lg overflow-hidden transition-all duration-200 hover:shadow-sm"
+    >
+      <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-secondary/20 transition-colors duration-150"
+        className="flex items-center justify-between cursor-pointer p-4 bg-card"
       >
-        <h3 className="text-lg font-semibold">{command.title}</h3>
-        <div className="ml-4 text-muted-foreground">
-          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        <div className="flex items-center">
+          <Code className="h-5 w-5 text-primary mr-3" />
+          <div>
+            <h3 className="font-medium">{command.title}</h3>
+            <p className="text-sm text-muted-foreground">{command.description}</p>
+          </div>
         </div>
-      </button>
+        <div className="ml-4 text-muted-foreground">
+          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </div>
+      </div>
       
       {isExpanded && (
-        <div className="p-4 pt-0 animate-fade-in border-t border-border">
-          <p className="text-muted-foreground mb-4">{command.description}</p>
-          
+        <div className="p-4 border-t border-border animate-fade-in">
           <div className="mb-4">
-            <h4 className="text-sm font-medium mb-2">Sintaxe:</h4>
-            <div className="code-block">
+            <h4 className="text-sm font-semibold mb-2">Sintaxe:</h4>
+            <pre className="bg-muted p-3 rounded text-sm overflow-x-auto">
               <code>{command.syntax}</code>
-            </div>
+            </pre>
           </div>
           
           <div className="mb-4">
-            <h4 className="text-sm font-medium mb-2">Exemplos:</h4>
-            <div className="space-y-3">
+            <h4 className="text-sm font-semibold mb-2">Exemplos:</h4>
+            <div className="space-y-2">
               {command.examples.map((example, index) => (
-                <div key={index} className="code-block relative">
-                  <code>{example.code}</code>
-                  <button 
-                    className="absolute right-2 top-2 text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      copyToClipboard(example.code, index);
-                    }}
-                    aria-label="Copiar comando"
-                  >
-                    {copiedIndex === index ? <Check size={16} /> : <Copy size={16} />}
-                  </button>
-                  <p className="mt-2 text-sm text-muted-foreground">{example.description}</p>
+                <div key={index} className="rounded-md">
+                  <pre className="bg-muted p-3 rounded-t-md text-sm overflow-x-auto">
+                    <code>{example.code}</code>
+                  </pre>
+                  <p className="text-xs p-2 bg-secondary/30 rounded-b-md">
+                    {example.description}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
           
-          {command.tips && (
+          {command.tips && command.tips.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-2">Dicas:</h4>
-              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+              <h4 className="text-sm font-semibold mb-2 flex items-center">
+                <Lightbulb className="h-4 w-4 text-amber-500 mr-1" />
+                Dicas:
+              </h4>
+              <ul className="space-y-1 list-disc list-inside text-sm text-muted-foreground">
                 {command.tips.map((tip, index) => (
                   <li key={index}>{tip}</li>
                 ))}

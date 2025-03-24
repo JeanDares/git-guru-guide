@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CommandCategory from '@/components/CommandCategory';
@@ -8,6 +9,32 @@ import { gitCategories } from '@/lib/gitCommands';
 
 const Commands = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const location = useLocation();
+  
+  // Parse query parameters when the URL changes
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const commandId = queryParams.get('command');
+    const categoryId = queryParams.get('category');
+    
+    // If we have both command and category, expand that category and scroll to it
+    if (commandId && categoryId) {
+      setExpandedCategories(new Set([categoryId]));
+      
+      // Use setTimeout to allow the category to expand before scrolling
+      setTimeout(() => {
+        const commandElement = document.getElementById(`command-${commandId}`);
+        if (commandElement) {
+          commandElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          commandElement.classList.add('highlight-command');
+          setTimeout(() => {
+            commandElement.classList.remove('highlight-command');
+          }, 2000);
+        }
+      }, 100);
+    }
+  }, [location.search]);
   
   // Filter categories and commands based on search term
   const filteredCategories = gitCategories.map(category => {
@@ -24,6 +51,19 @@ const Commands = () => {
       commands: filteredCommands
     };
   }).filter(category => category.commands.length > 0);
+  
+  // Handle category expansion
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -54,7 +94,12 @@ const Commands = () => {
           
           {filteredCategories.length > 0 ? (
             filteredCategories.map((category) => (
-              <CommandCategory key={category.id} category={category} />
+              <CommandCategory 
+                key={category.id} 
+                category={category} 
+                isExpanded={expandedCategories.has(category.id)}
+                onToggle={() => toggleCategory(category.id)}
+              />
             ))
           ) : (
             <div className="text-center py-12">
@@ -67,6 +112,16 @@ const Commands = () => {
       </main>
       
       <Footer />
+
+      <style jsx>{`
+        .highlight-command {
+          animation: highlight 2s ease-in-out;
+        }
+        @keyframes highlight {
+          0%, 100% { background-color: transparent; }
+          50% { background-color: rgba(var(--primary), 0.1); }
+        }
+      `}</style>
     </div>
   );
 };
